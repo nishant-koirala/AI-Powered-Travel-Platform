@@ -162,7 +162,7 @@ fpdf186/
 temp/
 unused/
 database/temp/
-admin_setup/temp/
+admin/temp/
 logs/
 *.swp
 *.swo
