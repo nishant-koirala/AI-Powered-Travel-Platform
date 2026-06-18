@@ -259,33 +259,6 @@ CREATE TABLE IF NOT EXISTS chatbot_system_quota (
 INSERT OR IGNORE INTO chatbot_system_quota (id, api_call_limit, period_calls) VALUES (1, 500, 0);
 
 -- ============================================================
--- TRIGGERS (SQLite syntax — || for string concat)
--- ============================================================
-
-CREATE TRIGGER IF NOT EXISTS after_booking_insert
-AFTER INSERT ON bookings
-BEGIN
-    INSERT INTO notifications (type, title, message, booking_id)
-    VALUES (
-        'new_booking',
-        'New Booking: ' || NEW.booking_number,
-        'New booking received from ' || NEW.name || ' for ' || NEW.package,
-        NEW.id
-    );
-END;
-
-CREATE TRIGGER IF NOT EXISTS before_booking_update
-BEFORE UPDATE ON bookings
-WHEN OLD.status != NEW.status
-BEGIN
-    INSERT INTO booking_status_history (booking_id, old_status, new_status, change_reason)
-    VALUES (
-        OLD.id, OLD.status, NEW.status,
-        'Status changed from ' || OLD.status || ' to ' || NEW.status
-    );
-END;
-
--- ============================================================
 -- SEED DATA
 -- ============================================================
 
@@ -307,3 +280,31 @@ INSERT OR IGNORE INTO packages (title, description, price, image) VALUES
 ('Manaslu Circuit Trek — 18 Days',    'Remote circuit around the eighth-highest peak.',   2199.00, 'manaslu.jpg'),
 ('Upper Mustang Trek — 14 Days',      'Forbidden Kingdom; ancient monasteries.',          2450.00, 'mustang.jpg'),
 ('Helambu Trek — 8 Days',             'Easy–moderate trek near Kathmandu.',               720.00,  'helambu.jpg');
+
+-- ============================================================
+-- TRIGGERS (SQLite syntax; no ; inside BEGIN...END so the
+-- db_connect.php explode(';',...) split keeps each trigger intact)
+-- ============================================================
+
+CREATE TRIGGER IF NOT EXISTS after_booking_insert
+AFTER INSERT ON bookings
+BEGIN
+    INSERT INTO notifications (type, title, message, booking_id)
+    VALUES (
+        'new_booking',
+        'New Booking: ' || NEW.booking_number,
+        'New booking received from ' || NEW.name || ' for ' || NEW.package,
+        NEW.id
+    )
+END;
+
+CREATE TRIGGER IF NOT EXISTS before_booking_update
+BEFORE UPDATE ON bookings
+WHEN OLD.status != NEW.status
+BEGIN
+    INSERT INTO booking_status_history (booking_id, old_status, new_status, change_reason)
+    VALUES (
+        OLD.id, OLD.status, NEW.status,
+        'Status changed from ' || OLD.status || ' to ' || NEW.status
+    )
+END;

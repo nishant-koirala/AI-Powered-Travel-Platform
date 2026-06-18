@@ -26,10 +26,14 @@ try {
         $pdo->exec('PRAGMA foreign_keys = ON');
         $pdo->exec('PRAGMA journal_mode = WAL');
 
-        // First boot: build the schema from sqlite_schema.sql
+        // Re-initialize if file is new OR if a previous partial init left tables missing
+        if (!$needsSetup) {
+            $check = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='packages'")->fetch();
+            $needsSetup = ($check === false);
+        }
+
         if ($needsSetup && file_exists($schemaPath)) {
             $sql = file_get_contents($schemaPath);
-            // Execute statement by statement (PDO::exec can't handle multi-statement in SQLite)
             foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) {
                 if ($stmt !== '') {
                     $pdo->exec($stmt);

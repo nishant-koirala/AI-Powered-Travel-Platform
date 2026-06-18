@@ -2,15 +2,19 @@
 // Include the database connection
 include 'database/db_connect.php'; 
 include 'component/navbar_links.php'; 
-include 'message_enhanced.php'; 
+include 'message.php'; 
 
 // Fetch packages with itinerary details from the database using PDO
 try {
-    $sql = "SELECT p.*, 
+    // SQLite does not support ORDER BY inside GROUP_CONCAT(); use driver-aware subquery
+    $imgSubq = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql'
+        ? "(SELECT GROUP_CONCAT(image_name ORDER BY sort_order) FROM package_images WHERE package_id = p.id)"
+        : "(SELECT GROUP_CONCAT(image_name) FROM package_images WHERE package_id = p.id)";
+    $sql = "SELECT p.*,
                    (SELECT COUNT(*) FROM itinerary_details WHERE package_id = p.id) as has_itinerary,
-                   (SELECT GROUP_CONCAT(image_name ORDER BY sort_order) FROM package_images WHERE package_id = p.id) as images
-            FROM packages p 
-            ORDER BY p.price ASC";  
+                   $imgSubq as images
+            FROM packages p
+            ORDER BY p.price ASC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -477,7 +481,7 @@ try {
                    </div>
                    
                    <div class="package-actions">
-                       <a href="book_enhanced.php?package=<?php echo urlencode($package['title']); ?>&price=<?php echo urlencode($package['price']); ?>" class="btn btn-primary">Book Now</a>
+                       <a href="book.php?package=<?php echo urlencode($package['title']); ?>&price=<?php echo urlencode($package['price']); ?>" class="btn btn-primary">Book Now</a>
                        <a href="package_details.php?id=<?php echo $package['id']; ?>" class="btn btn-secondary">View Details</a>
                    </div>
                </div>
