@@ -150,7 +150,7 @@ include __DIR__ . '/component/nav_admin.php';
                 echo "</div>";
                 
                 // Get all messages
-                $stmt = $pdo->query("SELECT * FROM chatbot_messages ORDER BY created_at DESC");
+                $stmt = $pdo->query("SELECT * FROM chatbot_messages ORDER BY created_at DESC LIMIT 500");
                 $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 if ($messages) {

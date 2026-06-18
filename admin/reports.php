@@ -1,99 +1,71 @@
 <?php
-include '../database/db_connect.php';
-session_start();
-// Fetch total bookings
+require_once __DIR__ . '/auth_admin.php';
+include __DIR__ . '/../database/db_connect.php';
+
+// SQLite uses strftime(); MySQL uses DATE_FORMAT()
+$monthExpr = ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite')
+    ? "strftime('%Y-%m', arrivals)"
+    : "DATE_FORMAT(arrivals, '%Y-%m')";
+
 function getTotalBookings($pdo) {
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM bookings");
-    return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    return $pdo->query("SELECT COUNT(*) as total FROM bookings")->fetch(PDO::FETCH_ASSOC)['total'];
 }
 
-// Fetch total revenue
 function getTotalRevenue($pdo) {
-    $stmt = $pdo->query("SELECT SUM(price) as total_revenue FROM bookings");
-    return $stmt->fetch(PDO::FETCH_ASSOC)['total_revenue'];
+    return $pdo->query("SELECT SUM(price) as total_revenue FROM bookings")->fetch(PDO::FETCH_ASSOC)['total_revenue'];
 }
 
-// Fetch total customers
 function getTotalCustomers($pdo) {
-    $stmt = $pdo->query("SELECT COUNT(DISTINCT email) as total_customers FROM bookings");
-    return $stmt->fetch(PDO::FETCH_ASSOC)['total_customers'];
+    return $pdo->query("SELECT COUNT(DISTINCT email) as total_customers FROM bookings")->fetch(PDO::FETCH_ASSOC)['total_customers'];
 }
 
-// Fetch total packages
 function getTotalPackages($pdo) {
-    $stmt = $pdo->query("SELECT COUNT(DISTINCT PACKAGE) as total_packages FROM bookings");
-    return $stmt->fetch(PDO::FETCH_ASSOC)['total_packages'];
+    return $pdo->query("SELECT COUNT(DISTINCT package) as total_packages FROM bookings")->fetch(PDO::FETCH_ASSOC)['total_packages'];
 }
 
-// Fetch all data for charts
-$customerGrowthData = getCustomerGrowthData($pdo);
-$topPackagesData = getTopPackagesData($pdo);
-$salesData = getSalesData($pdo);
-$bookingDistributionData = getBookingDistributionData($pdo);
-
-// Encode data to JSON format
-$customerGrowthJson = json_encode($customerGrowthData);
-$topPackagesJson = json_encode($topPackagesData);
-$salesJson = json_encode($salesData);
-$bookingDistributionJson = json_encode($bookingDistributionData);
-
-// Fetch summary data
-$totalBookings = getTotalBookings($pdo);
-$totalRevenue = getTotalRevenue($pdo);
-$totalCustomers = getTotalCustomers($pdo);
-$totalPackages = getTotalPackages($pdo);
-
-// Fetch data for Customer Growth Chart
-function getCustomerGrowthData($pdo) {
-    $stmt = $pdo->prepare("SELECT DATE_FORMAT(arrivals, '%Y-%m') AS month, COUNT(*) as count FROM bookings GROUP BY month ORDER BY month");
+function getCustomerGrowthData($pdo, $monthExpr) {
+    $stmt = $pdo->prepare("SELECT $monthExpr AS month, COUNT(*) as count FROM bookings GROUP BY month ORDER BY month");
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Fetch data for Top Packages by Revenue Chart
 function getTopPackagesData($pdo) {
-    $stmt = $pdo->prepare("SELECT PACKAGE AS package_name, SUM(price) as revenue FROM bookings GROUP BY PACKAGE ORDER BY revenue DESC LIMIT 5");
+    $stmt = $pdo->prepare("SELECT package AS package_name, SUM(price) as revenue FROM bookings GROUP BY package ORDER BY revenue DESC LIMIT 5");
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Fetch data for Total Sales Over Time Chart
-function getSalesData($pdo) {
-    $stmt = $pdo->prepare("SELECT DATE_FORMAT(arrivals, '%Y-%m') AS month, SUM(price) as sales FROM bookings GROUP BY month ORDER BY month");
+function getSalesData($pdo, $monthExpr) {
+    $stmt = $pdo->prepare("SELECT $monthExpr AS month, SUM(price) as sales FROM bookings GROUP BY month ORDER BY month");
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Fetch data for Booking Distribution by Package Chart
 function getBookingDistributionData($pdo) {
-    $stmt = $pdo->prepare("SELECT PACKAGE AS package_name, COUNT(*) as count FROM bookings GROUP BY PACKAGE");
+    $stmt = $pdo->prepare("SELECT package AS package_name, COUNT(*) as count FROM bookings GROUP BY package");
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Fetch all data
-$customerGrowthData = getCustomerGrowthData($pdo);
-$topPackagesData = getTopPackagesData($pdo);
-$salesData = getSalesData($pdo);
-$bookingDistributionData = getBookingDistributionData($pdo);
-
-// Encode data to JSON format
-$customerGrowthJson = json_encode($customerGrowthData);
-$topPackagesJson = json_encode($topPackagesData);
-$salesJson = json_encode($salesData);
-$bookingDistributionJson = json_encode($bookingDistributionData);
-
-
-
-
-// Fetch messages
 function getMessages($pdo) {
-    $stmt = $pdo->query("SELECT * FROM messages ORDER BY submitted_at DESC");
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $pdo->query("SELECT * FROM messages ORDER BY submitted_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
 }
 
-$messages = getMessages($pdo);
-?>
+// Fetch everything once
+$totalBookings           = getTotalBookings($pdo);
+$totalRevenue            = getTotalRevenue($pdo);
+$totalCustomers          = getTotalCustomers($pdo);
+$totalPackages           = getTotalPackages($pdo);
+$customerGrowthData      = getCustomerGrowthData($pdo, $monthExpr);
+$topPackagesData         = getTopPackagesData($pdo);
+$salesData               = getSalesData($pdo, $monthExpr);
+$bookingDistributionData = getBookingDistributionData($pdo);
+$messages                = getMessages($pdo);
+
+$customerGrowthJson      = json_encode($customerGrowthData);
+$topPackagesJson         = json_encode($topPackagesData);
+$salesJson               = json_encode($salesData);
+$bookingDistributionJson = json_encode($bookingDistributionData);
 ?>
 
 
@@ -408,10 +380,10 @@ html, body {
         new Chart(ctx3, {
             type: 'line',
             data: {
-                labels: salesData.map(item => item.date),
+                labels: salesData.map(item => item.month),
                 datasets: [{
                     label: 'Sales',
-                    data: salesData.map(item => item.amount),
+                    data: salesData.map(item => item.sales),
                     borderColor: 'rgba(255, 159, 64, 1)',
                     backgroundColor: 'rgba(255, 159, 64, 0.2)',
                     fill: true

@@ -2,7 +2,7 @@
 include '../../database/db_connect.php';
 
 try {
-    $sql = "SELECT * FROM packages ORDER BY id DESC";
+    $sql = "SELECT * FROM packages ORDER BY id DESC LIMIT 200";
     $stmt = $pdo->query($sql);
     $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

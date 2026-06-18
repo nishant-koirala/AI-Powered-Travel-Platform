@@ -131,7 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Handle itinerary updates
                 if (isset($_POST['day_title'])) {
                     // Delete existing itinerary for this package
-                    $pdo->exec("DELETE FROM itinerary_details WHERE package_id = $packageId");
+                    $delStmt = $pdo->prepare("DELETE FROM itinerary_details WHERE package_id = ?");
+                    $delStmt->execute([$packageId]);
                     
                     // Insert new itinerary details
                     $insertSql = "INSERT INTO itinerary_details (package_id, day_number, title, description, meals, activities, accommodation) VALUES (:package_id, :day_number, :title, :description, :meals, :activities, :accommodation)";

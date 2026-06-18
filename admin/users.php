@@ -1,20 +1,19 @@
 <?php
-// Include the database connection
+require_once 'auth_admin.php';
 include '../database/db_connect.php';
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 try {
     // Query to fetch user data
-    $usersQuery = "SELECT id, name, email, phone, role FROM users ORDER BY created_at DESC";
+    $usersQuery = "SELECT id, name, email, phone, role FROM users ORDER BY created_at DESC LIMIT 200";
     
     // Execute query
     $usersResult = $pdo->query($usersQuery);
 
-    // Fetch data
-    if ($usersResult) {
-        $users = $usersResult->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        die("Error fetching data: " . $pdo->errorInfo());
-    }
+    $users = $usersResult->fetchAll(PDO::FETCH_ASSOC);
 
     // Message handling
     $message = '';
@@ -69,8 +68,12 @@ try {
                         <td><?php echo htmlspecialchars($user['phone']); ?></td>
                         <td><?php echo htmlspecialchars($user['role']); ?></td>
                         <td>
-                            <a href="edit_user.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">Edit</a>
-                            <a href="delete_user.php?id=<?php echo $user['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
+                            <a href="edit_user.php?id=<?php echo (int)$user['id']; ?>" class="btn btn-primary btn-sm">Edit</a>
+                            <form method="POST" action="delete_user.php" style="display:inline" onsubmit="return confirm('Delete this user?')">
+                                <input type="hidden" name="id" value="<?php echo (int)$user['id']; ?>">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES); ?>">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
                         </td>
                     </tr>
                 <?php endforeach; ?>

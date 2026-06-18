@@ -1,22 +1,15 @@
 <?php
-// Include the database connection
-include '../database/db_connect.php';
+require_once __DIR__ . '/auth_admin.php';
+include __DIR__ . '/../database/db_connect.php';
 
 try {
-    // Query to fetch all bookings
-    $allBookingsQuery = "SELECT name, email, phone, address, location, guests, arrivals, leaving, package, price, created_at FROM bookings ORDER BY created_at DESC";
-    
-    // Execute query
-    $allBookingsResult = $pdo->query($allBookingsQuery);
-
-    // Fetch data
-    if ($allBookingsResult) {
-        $allBookings = $allBookingsResult->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        die("Error fetching data: " . $pdo->errorInfo());
-    }
+    $allBookingsResult = $pdo->query(
+        "SELECT name, email, phone, address, location, guests, arrivals, leaving, package, price, created_at
+         FROM bookings ORDER BY created_at DESC LIMIT 200"
+    );
+    $allBookings = $allBookingsResult->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    error_log("Error fetching data: " . $e->getMessage());
+    error_log("Error fetching bookings: " . $e->getMessage());
     die("Error fetching data. Please try again later.");
 }
 ?>

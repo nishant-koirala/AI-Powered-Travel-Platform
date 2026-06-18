@@ -1,6 +1,10 @@
 <?php
-// Include the database connection
-include '../database/db_connect.php';
+require_once __DIR__ . '/auth_admin.php';
+include __DIR__ . '/../database/db_connect.php';
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 try {
     // Query to fetch messages that are unseen (seen = 0)
@@ -65,8 +69,9 @@ try {
                         <td><?php echo nl2br(htmlspecialchars($msg['message'])); ?></td>
                         <td><?php echo date('F j, Y, g:i a', strtotime($msg['submitted_at'])); ?></td>
                         <td>
-                            <form action="delete_message.php" method="post" class="d-inline float-end ms-2">
-                                <input type="hidden" name="message_id" value="<?php echo $msg['id']; ?>">
+                            <form action="delete_message.php" method="post" class="d-inline float-end ms-2" onsubmit="return confirm('Delete this message?')">
+                                <input type="hidden" name="message_id" value="<?php echo (int)$msg['id']; ?>">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES); ?>">
                                 <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                             </form>
                         </td>

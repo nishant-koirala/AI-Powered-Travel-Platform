@@ -4,13 +4,21 @@ include 'database/db_connect.php'; // Adjust the path as needed
 
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Collect and sanitize input data
-    $name = isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '';
-    $email = isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '';
-    $phone = isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : '';
-    $message = isset($_POST['message']) ? htmlspecialchars($_POST['message']) : '';
+    $name    = trim(strip_tags($_POST['name']    ?? ''));
+    $email   = trim($_POST['email']   ?? '');
+    $phone   = trim(strip_tags($_POST['phone']   ?? ''));
+    $message = trim(strip_tags($_POST['message'] ?? ''));
 
-    // Prepare SQL query
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid email address.']);
+        exit();
+    }
+
+    if ($name === '' || $message === '') {
+        echo json_encode(['status' => 'error', 'message' => 'Name and message are required.']);
+        exit();
+    }
+
     $sql = "INSERT INTO messages (name, email, phone, message) VALUES (:name, :email, :phone, :message)";
     $stmt = $pdo->prepare($sql);
 

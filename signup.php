@@ -85,7 +85,7 @@
         <input type="email" id="email" name="email" required>
 
         <label for="phone">Phone Number:</label>
-        <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" required>
+        <input type="tel" id="phone" name="phone" pattern="[0-9+\-\s()]{7,20}">
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required minlength="6">

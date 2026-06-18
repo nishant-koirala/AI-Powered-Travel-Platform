@@ -2,13 +2,13 @@
 // Include the database connection
 include 'database/db_connect.php'; 
 include 'component/navbar_links.php'; 
-include 'message_enhanced.php'; 
+include 'message.php'; 
 
 // Get package ID from URL
 $packageId = $_GET['id'] ?? null;
 
 if (!$packageId) {
-    header('Location: package_enhanced.php');
+    header('Location: package.php');
     exit();
 }
 
@@ -21,7 +21,7 @@ try {
     $package = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$package) {
-        header('Location: package_enhanced.php');
+        header('Location: package.php');
         exit();
     }
     
@@ -754,7 +754,7 @@ try {
                         </div>
                     </div>
                     
-                    <form action="book_enhanced.php" method="get" class="booking-form">
+                    <form action="book.php" method="get" class="booking-form">
                         <input type="hidden" name="package" value="<?php echo htmlspecialchars($package['title']); ?>">
                         <input type="hidden" name="price" value="<?php echo htmlspecialchars($package['price']); ?>">
                         
@@ -822,10 +822,10 @@ try {
                 <div class="inclusion-list">
                     <h4><i class="fas fa-check-circle"></i> What's Included</h4>
                     <ul>
-                        <?php 
+                        <?php
                         if (!empty($inclusions)) {
                             foreach ($inclusions as $item) {
-                                echo '<li>' . htmlspecialchars($item['item']) . '</li>';
+                                echo '<li>' . htmlspecialchars($item) . '</li>';
                             }
                         } elseif ($package['includes']) {
                             $includes = explode(', ', $package['includes']);
@@ -840,10 +840,10 @@ try {
                 <div class="exclusion-list">
                     <h4><i class="fas fa-times-circle"></i> What's Excluded</h4>
                     <ul>
-                        <?php 
+                        <?php
                         if (!empty($exclusions)) {
                             foreach ($exclusions as $item) {
-                                echo '<li>' . htmlspecialchars($item['item']) . '</li>';
+                                echo '<li>' . htmlspecialchars($item) . '</li>';
                             }
                         } elseif ($package['excludes']) {
                             $excludes = explode(', ', $package['excludes']);

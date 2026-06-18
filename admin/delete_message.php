@@ -1,35 +1,34 @@
 <?php
-session_start();
-include '../database/db_connect.php'; // Include your database connection file
+require_once __DIR__ . '/auth_admin.php';
+include __DIR__ . '/../database/db_connect.php';
 
-// Check if the user is an admin
-// if (!isset($_SESSION['user']) || $_SESSION['user'] !== 'admin') {
-//     header('Location: login.php');
-//     exit();
-// }
-
-// Check if message_id is set
-if (isset($_POST['message_id'])) {
-    $message_id = (int)$_POST['message_id'];
-
-    try {
-        // Prepare and execute the delete statement
-        $stmt = $pdo->prepare("DELETE FROM messages WHERE id = :id");
-        $stmt->execute(['id' => $message_id]);
-
-        // Redirect back to the messages page with a success message
-        $_SESSION['success_message'] = "Message deleted successfully.";
-    } catch (PDOException $e) {
-        // Handle any errors that occur
-        $_SESSION['error_message'] = "Failed to delete message: " . $e->getMessage();
-    }
-
-    header('Location: recivedMessage.php'); // Adjust the redirect URL as needed
-    exit();
-} else {
-    // If no message_id is provided, redirect to the messages page
-    header('Location: recivedMessage.php');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: messages.php');
     exit();
 }
+
+if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'] ?? '')) {
+    $_SESSION['error_message'] = "Invalid request.";
+    header('Location: messages.php');
+    exit();
+}
+
+$message_id = (int) ($_POST['message_id'] ?? 0);
+if ($message_id <= 0) {
+    header('Location: messages.php');
+    exit();
+}
+
+try {
+    $stmt = $pdo->prepare("DELETE FROM messages WHERE id = :id");
+    $stmt->execute(['id' => $message_id]);
+    $_SESSION['success_message'] = "Message deleted successfully.";
+} catch (PDOException $e) {
+    error_log("delete_message: " . $e->getMessage());
+    $_SESSION['error_message'] = "Failed to delete message.";
+}
+
+header('Location: messages.php');
+exit();
 ?>
     
