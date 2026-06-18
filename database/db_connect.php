@@ -26,10 +26,16 @@ try {
         $pdo->exec('PRAGMA foreign_keys = ON');
         $pdo->exec('PRAGMA journal_mode = WAL');
 
-        // Re-initialize if file is new OR if a previous partial init left tables missing
+        // Re-initialize if: new file, tables missing, or packages table is empty
+        // (covers a previous partial init that created tables but never inserted seed data)
         if (!$needsSetup) {
-            $check = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='packages'")->fetch();
-            $needsSetup = ($check === false);
+            $tableExists = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='packages'")->fetch();
+            if (!$tableExists) {
+                $needsSetup = true;
+            } else {
+                $count = $pdo->query("SELECT COUNT(*) FROM packages")->fetchColumn();
+                $needsSetup = ((int) $count === 0);
+            }
         }
 
         if ($needsSetup && file_exists($schemaPath)) {
