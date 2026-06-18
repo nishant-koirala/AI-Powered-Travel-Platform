@@ -3,10 +3,13 @@
 include __DIR__ . '/auth_admin.php';
 include __DIR__ . '/../database/db_connect.php';
 
-$plan = $_GET['plan'] ?? '';
-$success = false;
-$message = '';
+$plan             = $_GET['plan'] ?? '';
+$success          = false;
+$message          = '';
 $processedPayment = false;
+$planName         = '';
+$planPrice        = '';
+$newLimit         = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $plan !== '') {
     try {
@@ -34,10 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $plan !== '') {
                     break;
                     
                 case 'enterprise':
-                    $newLimit = 1000;
+                    $newLimit = $currentLimit + 1000;
                     $planName = 'Enterprise';
                     $planPrice = '$25';
-                    $message = 'Enterprise plan activated! 1000 API access.';
+                    $message = 'Enterprise plan purchased! 1000 credits added to your account.';
                     break;
                     
                 default:
@@ -187,7 +190,7 @@ include __DIR__ . '/component/nav_admin.php';
                     <p><strong>Price:</strong> <?php echo htmlspecialchars($planPrice); ?></p>
                     <p><strong>New Limit:</strong> <?php echo $newLimit; ?> API calls/month</p>
                 </div>
-                <a href="api_usage_enhanced.php" class="payment-btn esewa">View Updated Usage</a>
+                <a href="api_usage.php" class="payment-btn esewa">View Updated Usage</a>
             </div>
             
         <?php elseif ($plan === ''): ?>
@@ -196,7 +199,7 @@ include __DIR__ . '/component/nav_admin.php';
                 <div style="font-size: 4rem; color: #dc3545; margin-bottom: 20px;">❌</div>
                 <h4 class="text-danger">Error</h4>
                 <p>No plan selected. Please choose a plan from the usage page.</p>
-                <a href="api_usage_enhanced.php" class="payment-btn esewa">Choose Plan</a>
+                <a href="api_usage.php" class="payment-btn esewa">Choose Plan</a>
             </div>
             
         <?php elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && !$processedPayment): ?>
@@ -205,7 +208,7 @@ include __DIR__ . '/component/nav_admin.php';
                 <div style="font-size: 4rem; color: #dc3545; margin-bottom: 20px;">❌</div>
                 <h4 class="text-danger">Payment Failed</h4>
                 <p><?php echo htmlspecialchars($message); ?></p>
-                <a href="api_usage_enhanced.php" class="payment-btn esewa">Try Again</a>
+                <a href="api_usage.php" class="payment-btn esewa">Try Again</a>
             </div>
             
         <?php else: ?>

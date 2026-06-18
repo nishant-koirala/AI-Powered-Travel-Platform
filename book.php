@@ -1,30 +1,25 @@
 <?php
 include 'component/navbar_links.php';
 
-// Check if the user is logged in and has 'customer' role
-if (!isset($_SESSION['user']) || $_SESSION['user'] !== 'customer') {
+// Allow both customers and admins to access the booking page
+if (!isset($_SESSION['user']) || !in_array($_SESSION['user'], ['customer', 'admin'])) {
     header('Location: login.php');
     exit();
 }
 
 include 'database/db_connect.php';
 
-// Get package details
-$packageTitle = $_GET['package'] ?? '';
-$packagePrice = $_GET['price'] ?? '';
-
-$packageDetails = null;
+$packageTitle    = $_GET['package'] ?? '';
+$packageDetails  = null;
 $itineraryDetails = [];
 
 if ($packageTitle) {
     try {
-        // Fetch package details
         $stmt = $pdo->prepare("SELECT * FROM packages WHERE title = ?");
         $stmt->execute([$packageTitle]);
         $packageDetails = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($packageDetails) {
-            // Fetch itinerary details
             $itineraryStmt = $pdo->prepare("SELECT * FROM itinerary_details WHERE package_id = ? ORDER BY day_number");
             $itineraryStmt->execute([$packageDetails['id']]);
             $itineraryDetails = $itineraryStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -33,6 +28,9 @@ if ($packageTitle) {
         error_log("Error fetching package details: " . $e->getMessage());
     }
 }
+
+// Always use the DB price — never trust the URL parameter
+$packagePrice = $packageDetails ? number_format((float)$packageDetails['price'], 2, '.', '') : '0.00';
 ?>
 
 <style>
@@ -344,8 +342,7 @@ if ($packageTitle) {
                
                <!-- Hidden fields -->
                <input type="hidden" name="package" value="<?php echo htmlspecialchars($packageTitle); ?>">
-               <input type="hidden" name="price" value="<?php echo htmlspecialchars($packagePrice); ?>">
-               <input type="hidden" id="totalPrice" name="totalPrice" value="<?php echo htmlspecialchars($packagePrice); ?>">
+               <input type="hidden" id="totalPrice" value="<?php echo htmlspecialchars($packagePrice); ?>">
                
                <button type="submit" class="btn-book">Complete Booking</button>
            </form>

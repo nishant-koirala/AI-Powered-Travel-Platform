@@ -1,35 +1,27 @@
 <?php
-// Include the database connection
+require_once __DIR__ . '/auth_admin.php';
 include '../database/db_connect.php';
 
 try {
-    // Fetch data from the database
-    $totalBookingsQuery = "SELECT COUNT(*) AS totalBookings FROM bookings";
-    $newSignupsQuery = "SELECT COUNT(*) AS newSignups FROM bookings WHERE DATE(created_at) = CURDATE()";
-    $salesQuery = "SELECT SUM(price) AS totalSales FROM bookings";
-    $recentActivitiesQuery = "SELECT name, package, arrivals, leaving FROM bookings ORDER BY created_at DESC LIMIT 5";
-    $allBookingsQuery = "SELECT name, email, phone, address, location, guests, arrivals, leaving, package, price, created_at FROM bookings ORDER BY created_at DESC";
+    // SQLite uses DATE('now','localtime'); MySQL uses CURDATE()
+    $todayExpr = ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite')
+        ? "DATE('now','localtime')"
+        : 'CURDATE()';
 
-    // Execute queries
-    $totalBookingsResult = $pdo->query($totalBookingsQuery);
-    $newSignupsResult = $pdo->query($newSignupsQuery);
-    $salesResult = $pdo->query($salesQuery);
-    $recentActivitiesResult = $pdo->query($recentActivitiesQuery);
-    $allBookingsResult = $pdo->query($allBookingsQuery);
+    $totalBookingsResult   = $pdo->query("SELECT COUNT(*) AS totalBookings FROM bookings");
+    $newSignupsResult      = $pdo->query("SELECT COUNT(*) AS newSignups FROM users WHERE DATE(created_at) = $todayExpr");
+    $salesResult           = $pdo->query("SELECT SUM(price) AS totalSales FROM bookings");
+    $recentActivitiesResult = $pdo->query("SELECT name, package, arrivals, leaving FROM bookings ORDER BY created_at DESC LIMIT 5");
 
-    // Check if queries are successful
-    if ($totalBookingsResult && $newSignupsResult && $salesResult && $recentActivitiesResult && $allBookingsResult) {
-        // Fetch data as associative arrays
-        $totalBookings = $totalBookingsResult->fetch(PDO::FETCH_ASSOC)['totalBookings'];
-        $newSignups = $newSignupsResult->fetch(PDO::FETCH_ASSOC)['newSignups'];
-        $totalSales = $salesResult->fetch(PDO::FETCH_ASSOC)['totalSales'];
+    if ($totalBookingsResult && $newSignupsResult && $salesResult && $recentActivitiesResult) {
+        $totalBookings    = $totalBookingsResult->fetch(PDO::FETCH_ASSOC)['totalBookings'];
+        $newSignups       = $newSignupsResult->fetch(PDO::FETCH_ASSOC)['newSignups'];
+        $totalSales       = $salesResult->fetch(PDO::FETCH_ASSOC)['totalSales'];
         $recentActivities = $recentActivitiesResult->fetchAll(PDO::FETCH_ASSOC);
-        $allBookings = $allBookingsResult->fetchAll(PDO::FETCH_ASSOC);
     } else {
-        die("Error fetching data: " . $pdo->errorInfo());
+        die("Error fetching data.");
     }
 } catch (PDOException $e) {
-    // Log the error (optional)
     error_log("Error fetching data: " . $e->getMessage());
     die("Error fetching data. Please try again later.");
 }
@@ -55,7 +47,7 @@ try {
                 </div>
                 <div class="col-md-3">
                     <div class="card text-white bg-success mb-3">
-                        <div class="card-header">New Signups</div>
+                        <div class="card-header">New Signups Today</div>
                         <div class="card-body">
                             <h5 class="card-title"><?php echo htmlspecialchars($newSignups); ?></h5>
                         </div>
@@ -65,7 +57,7 @@ try {
                     <div class="card text-white bg-warning mb-3">
                         <div class="card-header">Sales</div>
                         <div class="card-body">
-                            <h5 class="card-title">$<?php echo number_format($totalSales, 2); ?></h5>
+                            <h5 class="card-title">$<?php echo number_format($totalSales ?? 0, 2); ?></h5>
                         </div>
                     </div>
                 </div>

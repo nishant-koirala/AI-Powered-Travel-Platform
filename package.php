@@ -450,7 +450,7 @@ try {
    if (!empty($packages)) {
        // Loop through each package and display it
        foreach ($packages as $package) {
-           $images = explode(',', $package['images']);
+           $images = !empty($package['images']) ? explode(',', $package['images']) : [];
            $primaryImage = $images[0] ?? 'default.jpg';
            ?>
            <div class="package-card">
