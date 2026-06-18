@@ -47,13 +47,20 @@ temp/
 *.old
 
 # Database Backups and Dumps
-*.sql
 *.sql.gz
 *.sql.zip
 database/backups/
 database/dumps/
-database/*.sql
 database/*.sql.gz
+# Keep these schema/migration files tracked
+!database/full_backup.sql
+!database/sqlite_schema.sql
+!database/create_database.sql
+!database/create_additional_tables.sql
+!database/add_itinerary_tables.sql
+!database/chatbot_admin_tables.sql
+!database/chatbot_messages.sql
+!database/seed_trekking_packages.sql
 
 # Upload Directories and User Content
 uploads/
@@ -163,6 +170,7 @@ temp/
 unused/
 database/temp/
 admin/temp/
+database/travel_backup.sqlite
 logs/
 *.swp
 *.swo
