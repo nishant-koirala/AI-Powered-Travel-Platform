@@ -282,8 +282,8 @@ INSERT OR IGNORE INTO packages (title, description, price, image) VALUES
 ('Helambu Trek — 8 Days',             'Easy–moderate trek near Kathmandu.',               720.00,  'helambu.jpg');
 
 -- ============================================================
--- TRIGGERS (SQLite syntax; no ; inside BEGIN...END so the
--- db_connect.php explode(';',...) split keeps each trigger intact)
+-- TRIGGERS (SQLite syntax — || for string concat)
+-- db_connect.php uses a BEGIN/END-aware splitter so these are safe.
 -- ============================================================
 
 CREATE TRIGGER IF NOT EXISTS after_booking_insert
@@ -295,7 +295,7 @@ BEGIN
         'New Booking: ' || NEW.booking_number,
         'New booking received from ' || NEW.name || ' for ' || NEW.package,
         NEW.id
-    )
+    );
 END;
 
 CREATE TRIGGER IF NOT EXISTS before_booking_update
@@ -306,5 +306,5 @@ BEGIN
     VALUES (
         OLD.id, OLD.status, NEW.status,
         'Status changed from ' || OLD.status || ' to ' || NEW.status
-    )
+    );
 END;

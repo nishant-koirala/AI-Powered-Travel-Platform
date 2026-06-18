@@ -40,9 +40,34 @@ try {
 
         if ($needsSetup && file_exists($schemaPath)) {
             $sql = file_get_contents($schemaPath);
-            foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) {
-                if ($stmt !== '') {
+            // Split on ';' only outside BEGIN...END blocks so triggers stay intact.
+            $stmts   = [];
+            $buf     = '';
+            $depth   = 0;
+            foreach (preg_split('/\r?\n/', $sql) as $line) {
+                $upper = strtoupper(trim($line));
+                if ($upper === 'BEGIN') {
+                    $depth++;
+                } elseif ($upper === 'END' || $upper === 'END;') {
+                    if ($depth > 0) $depth--;
+                }
+                $buf .= $line . "\n";
+                if ($depth === 0 && substr(rtrim($line), -1) === ';') {
+                    $stmt = trim(rtrim(rtrim($buf), ';'));
+                    if ($stmt !== '' && strncmp(ltrim($stmt), '--', 2) !== 0) {
+                        $stmts[] = $stmt;
+                    }
+                    $buf = '';
+                }
+            }
+            if (trim($buf) !== '') {
+                $stmts[] = trim($buf);
+            }
+            foreach ($stmts as $stmt) {
+                try {
                     $pdo->exec($stmt);
+                } catch (PDOException $stmtErr) {
+                    error_log("[db_connect] SQLite schema stmt skipped: " . $stmtErr->getMessage());
                 }
             }
         }
